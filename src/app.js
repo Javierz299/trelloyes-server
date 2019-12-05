@@ -156,6 +156,22 @@ app.post('/list', (req,res) => {
   .json(list);
 })
 
+///////////////DELETE LIST/////////////
+app.delete('/list/:id', (req,res) => {
+  const { id } = req.params;
+  const listIndex = lists.findIndex(li => li.id) == id
+
+  if(listIndex === -1){
+    logger.error(`list with id ${id} not found`)
+    return res.status(400).send('not found')
+  }
+  
+  lists.splice(listIndex,1);
+
+  logger.info(`list with id ${id} deleted`)
+  res.status(204).end()
+
+})
 
 app.use(function errorHandler(error, req, res, next) {
 

@@ -4,6 +4,7 @@ const morgan = require('morgan')
 const cors = require('cors')
 const helmet = require('helmet')
 const winston = require('winston')
+const uuid = require('uuid/v4')
 const { NODE_ENV } = require('./config')
 
 const app = express()
@@ -55,7 +56,7 @@ app.use(function validateBearerToken(req, res, next) {
   next()
 })
 
-//////////////CARD/////////////
+//////////////GET CARD/////////////
 app.get('/card',(req,res) => {
   res.json(cards)
 })
@@ -74,7 +75,9 @@ app.get('/card/:id',(req,res) => {
   res.json(card);
 })
 
-//////////////LIST////////////
+
+
+//////////////GET LIST////////////
 app.get('/list',(req,res) => {
   res.json(lists)
 })
@@ -88,6 +91,69 @@ app.get('/list/:id', (req,res) => {
     return res.status(404).send('List Not Found')
   }
   res.json(list)
+})
+
+//////////////POST CARD////////////
+app.post('/card',(req,res) => {
+  const {title, content } = req.body;
+  const id = uuid()
+
+  const card = {id,title,content}
+  cards.push(card)
+
+  if(!title){
+    logger.error('title is required')
+    return res.status(400).send('invalid data')
+  }
+  if(!content){
+    logger.error('content is required')
+    return res.status(400).send('invalid data')
+  }
+  logger.info(`Card with id ${id} created`)
+
+  res.status(201).location(`http://localhost:8000/card/${id}`).json(card)
+})
+
+/////////////POST LIST////////////////
+app.post('/list', (req,res) => {
+  const {header, cardIds = []} = req.body;
+  console.log(req.body)
+
+  if(!header){
+    logger.error(`Header is required`)
+    return res.status(400).send('Invalid data')
+  }
+
+  //check cardIDs
+  if (cardIds.length > 0) {
+    let valid = true;
+    cardIds.forEach(cid => {
+      const card = cards.find(c => c.id == cid);
+      if (!card) {
+        logger.error(`Card with id ${cid} not found in cards array.`);
+        valid = false;
+      }
+    });
+
+    if (!valid) {
+      return res
+        .status(400)
+        .send('Invalid data');
+    }
+  }
+
+
+  const id = uuid()
+
+  const list = {id,header,cardIds}
+
+  lists.push(list)
+  logger.info(`list with id ${id} created`)
+  
+  res
+  .status(201)
+  .location(`http://localhost:8000/list/${id}`)
+  .json(list);
 })
 
 
